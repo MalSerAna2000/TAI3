@@ -1,5 +1,4 @@
 extends CharacterBody3D
-class_name YumikPlayer
 ## Юмик: 25 лет, 190 см, 80 кг. Короткие чёрные волосы до плеч, голубые глаза,
 ## белая пижама и голубые джинсы (или розовое платье горничной из шкафа замка).
 ## CharacterBody3D + процедурный визуал + сменный ragdoll (RigidBody3D-кости).
@@ -91,7 +90,7 @@ var _hold_joints: Array[Joint3D] = []
 var hold_on: bool = false # «Не отпускай меня»
 var _ragdoll_still_time: float = 0.0
 var _throne_pin: Joint3D = null
-var _capture_castle: CastleNZTB = null
+var _capture_castle = null # замок (без жёсткой типизации: нет циклических ссылок классов)
 
 const RagdollPartScript: GDScript = preload("res://scripts/ragdoll_part.gd")
 
@@ -551,7 +550,7 @@ func _clear_hold_joints() -> void:
 	hold_on = false
 
 func try_toggle_outfit() -> void:
-	var castle: CastleNZTB = GameState.castle
+	var castle = GameState.castle
 	if castle == null or not castle.has_method("is_near_wardrobe"):
 		return
 	if not castle.is_near_wardrobe(global_position):
@@ -580,7 +579,7 @@ func _apply_outfit() -> void:
 	_update_sail_areas()
 
 # -------------------------------------------------------------- захват -----
-func enter_captured(castle: CastleNZTB) -> void:
+func enter_captured(castle) -> void:
 	_capture_castle = castle
 	if mode == Mode.RAGDOLL or mode == Mode.THRONE:
 		exit_ragdoll(global_position)
@@ -600,7 +599,7 @@ func exit_captured(by_escape: bool) -> void:
 	_capture_castle = null
 	set_squash(0.0)
 
-func enter_sleep_cutscene(castle: CastleNZTB) -> void:
+func enter_sleep_cutscene(castle) -> void:
 	_capture_castle = castle
 	mode = Mode.SLEEP
 	_collision.disabled = true
@@ -659,7 +658,7 @@ func enter_throne(castle: Node3D) -> void:
 
 func exit_throne() -> void:
 	if GameState.castle != null and GameState.castle.has_method("end_throne_squeeze"):
-		GameState.castle.end_throne_squeeze()
+		GameState.castle.call("end_throne_squeeze")
 	if _throne_pin != null:
 		_throne_pin.queue_free()
 		_throne_pin = null
@@ -692,7 +691,7 @@ func _climb_raycast() -> Dictionary:
 	return space.intersect_ray(query)
 
 func _touch_god_if_close(force: bool) -> void:
-	var castle: CastleNZTB = GameState.castle
+	var castle = GameState.castle
 	if castle == null or not castle.has_method("god_global_pos"):
 		return
 	if global_position.distance_to(castle.god_global_pos()) < 5.0:
@@ -738,7 +737,7 @@ func _physics_process(delta: float) -> void:
 			mode = Mode.NORMAL
 
 func _follow_castle_platform() -> void:
-	var castle: CastleNZTB = GameState.castle
+	var castle = GameState.castle
 	if castle == null:
 		return
 	var castle3d := castle as Node3D
@@ -776,11 +775,11 @@ func _move_ground(delta: float) -> void:
 		velocity.y -= g * delta
 	# Внешние течения: всасывание, порывы в зале, циклон, ветер в подол
 	var external: Vector3 = Vector3.ZERO
-	var castle: CastleNZTB = GameState.castle
+	var castle = GameState.castle
 	if castle != null and castle.has_method("suction_velocity_at"):
 		external += castle.suction_velocity_at(global_position + Vector3.UP)
 		external += castle.interior_gust_velocity()
-	var cyclone: Node = get_tree().get_first_node_in_group("cyclone")
+	var cyclone = get_tree().get_first_node_in_group("cyclone")
 	if cyclone != null and cyclone.has_method("wind_velocity_at"):
 		external += cyclone.wind_velocity_at(global_position + Vector3.UP)
 	var wind: Vector3 = WindManager.wind_vector()
@@ -970,7 +969,7 @@ func _move_climb_rope(delta: float) -> void:
 		return
 	# Вертикальный ввод двигает хват вверх/вниз по цепочке сегментов
 	_rope_switch_timer = maxf(0.0, _rope_switch_timer - delta)
-	var castle: CastleNZTB = GameState.castle
+	var castle = GameState.castle
 	if castle != null and absf(_move_input.y) > 0.55 and _rope_switch_timer <= 0.0:
 		_rope_switch_timer = 0.38
 		var idx: int = int(seg.get_meta("rope_index", 0))

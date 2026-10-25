@@ -1,5 +1,4 @@
 extends Node3D
-class_name WorldGenerator
 ## WorldGenerator — процедурный открытый мир: чанки 256 м, FastNoiseLite,
 ## три НЕпересекающиеся зоны (Равнины / Водоёмы / Горы) с плавными переходами
 ## высоты (коллизия HeightMapShape3D — одна на чанк, без пересечений коллизий).
@@ -26,6 +25,14 @@ func setup(player_node: Node3D) -> void:
 	world_size_m = GameState.world_size_km * 1000.0
 	view_distance = minf(3000.0, world_size_m * 0.75 + 600.0)
 	_terrain_material = _make_terrain_material()
+	# Синхронно строим чанки 3x3 вокруг спавна, чтобы земля уже была под ногами
+	# игрока и замка в первом же физическом кадре (остальные догружает стриминг).
+	var pc: Vector2i = _chunk_of(player_node.global_position)
+	for cx: int in range(pc.x - 1, pc.x + 2):
+		for cz: int in range(pc.y - 1, pc.y + 2):
+			_build_chunk_data(Vector2i(cx, cz))
+	_build_ready_chunks(9)
+	_last_chunk = pc
 	_update_streaming(true)
 
 func _process(_delta: float) -> void:

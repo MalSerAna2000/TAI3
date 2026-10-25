@@ -16,9 +16,9 @@ var time_scale: float = 60.0 # игровых секунд за реальную
 var day_count: int = 1
 
 # --- Ссылки на ключевые ноды (выставляются Main) ---
-var player: YumikPlayer = null
-var castle: CastleNZTB = null
-var world: WorldGenerator = null
+var player: Node3D = null
+var castle: Node3D = null
+var world: Node3D = null
 
 # --- Сон от эйфории (няшинг) ---
 var sleeping: bool = false
@@ -73,8 +73,8 @@ func _do_respawn() -> void:
 	var dist: float = randf_range(5.0, 10.0)
 	var target: Vector3 = _death_pos + Vector3(cos(ang) * dist, 0.0, sin(ang) * dist)
 	if world != null:
-		target.y = maxf(world.get_height_at(target.x, target.z) + 1.2, _death_pos.y)
+		target.y = maxf(float(world.call("get_height_at", target.x, target.z)) + 1.2, _death_pos.y)
 	else:
 		target.y = _death_pos.y + 1.0
-	player.respawn_at(target)
+	player.call("respawn_at", target)
 	player_respawned.emit()

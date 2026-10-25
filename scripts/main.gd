@@ -5,12 +5,12 @@ extends Node3D
 
 const CycloneScript: GDScript = preload("res://scripts/cyclone.gd")
 
-var _player: YumikPlayer
-var _castle: CastleNZTB
-var _world: WorldGenerator
-var _atmosphere: AeroAtmosphere3D
+var _player
+var _castle
+var _world
+var _atmosphere
 var _water: MeshInstance3D
-var _hud: GameHUD
+var _hud
 var _cyclone: Node3D = null
 var _ambience_timer: float = 0.0
 var _kb_active: bool = false
@@ -30,14 +30,14 @@ func _ready() -> void:
 	GameState.world = _world
 	# Замок в начале координат стартовой долины
 	var castle_scene := load("res://scenes/nztbnz.tscn") as PackedScene
-	_castle = castle_scene.instantiate() as CastleNZTB
+	_castle = castle_scene.instantiate()
 	var castle_h: float = _world.call("get_height_at", 0.0, 0.0)
 	add_child(_castle)
 	_castle.global_position = Vector3(0, castle_h + 0.25, 0)
 	GameState.castle = _castle
 	# Юмик в 50 м к югу от замка, лицом к нему
 	var player_scene := load("res://scenes/player.tscn") as PackedScene
-	_player = player_scene.instantiate() as YumikPlayer
+	_player = player_scene.instantiate()
 	add_child(_player)
 	var spawn := Vector3(0, _world.call("get_height_at", 0.0, 50.0) + 0.3, 50.0)
 	_player.call("setup_spawn", spawn, 0.0)
@@ -75,7 +75,7 @@ func _ready() -> void:
 	day_night.set("follow_target", _player)
 	# HUD
 	var hud_scene := load("res://scenes/hud.tscn") as PackedScene
-	_hud = hud_scene.instantiate() as GameHUD
+	_hud = hud_scene.instantiate()
 	add_child(_hud)
 	# Циклон Богини Ветра при урагане
 	WindManager.hurricane_started.connect(_spawn_cyclone)

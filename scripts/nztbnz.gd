@@ -1,5 +1,4 @@
 extends AeroBody3D
-class_name CastleNZTB
 ## НЗТБНЗ — Надувной Замок Темного Бога Надувных Замков (33×33×33 м, ПВХ 0.35 мм,
 ## камеры 2 м, готика, тёмно-красный). Одно тело AeroBody3D (Jolt + Aerodynamic
 ## Physics): все стены/крылья/башни/тело Бога — CollisionShape3D этого тела,
@@ -94,7 +93,7 @@ func _ready() -> void:
 	add_to_group("castle")
 	mass = 1400.0
 	can_sleep = false
-	continuous_cd = RigidBody3D.CCD_MODE_CAST_SHAPE
+	continuous_cd = true # Godot 4.7: continuous_cd — bool (CCD_MODE_* удалены)
 	linear_damp = 0.12
 	angular_damp = 0.4
 	contact_monitor = true
@@ -791,7 +790,7 @@ func _apply_flight(delta: float) -> void:
 	_flap_phase += delta * 4.6
 	var ground_h: float = 0.0
 	if GameState.world != null and GameState.world.has_method("get_height_at"):
-		ground_h = GameState.world.get_height_at(global_position.x, global_position.z)
+		ground_h = float(GameState.world.call("get_height_at", global_position.x, global_position.z))
 	var alt: float = global_position.y - ground_h
 	var target_vy: float = clampf((_fly_target_alt - alt) * 0.35, -7.0, 9.0)
 	var lift_k: float = 0.75 + 0.45 * maxf(sin(_flap_phase), 0.0) # подъём на взмахе вниз
@@ -978,7 +977,7 @@ func _start_nyashing() -> void:
 	AudioManager.play_music("music_nyashing", -9.0)
 	AudioManager.play_sfx("chime_magic", -4.0)
 	if GameState.player != null and GameState.player.has_method("enter_captured"):
-		GameState.player.enter_captured(self)
+		GameState.player.call("enter_captured", self)
 	nyashing_started.emit()
 	toast.emit("Темный Бог схватил Юмика! Начинается Няшинг…")
 
@@ -990,7 +989,7 @@ func _end_nyashing(released_by_escape: bool) -> void:
 	_blush_l.visible = false
 	_blush_r.visible = false
 	if GameState.player != null and GameState.player.has_method("exit_captured"):
-		GameState.player.exit_captured(released_by_escape)
+		GameState.player.call("exit_captured", released_by_escape)
 	nyashing_ended.emit()
 
 func _update_nyashing(delta: float, game_min_delta: float) -> void:
@@ -1004,7 +1003,7 @@ func _update_nyashing(delta: float, game_min_delta: float) -> void:
 		if _weakened:
 			AudioManager.play_sfx("heartbeat", -13.0, randf_range(1.0, 1.25))
 	if GameState.player != null and GameState.player.has_method("set_squash"):
-		GameState.player.set_squash(0.5 + 0.5 * sin(_god_bob_phase))
+		GameState.player.call("set_squash", 0.5 + 0.5 * sin(_god_bob_phase))
 	if _sleep_active:
 		return # во сне Бог просто продолжает няшить — прогресс эйфории не идёт
 	# Побег вырыванием
@@ -1021,7 +1020,7 @@ func _update_nyashing(delta: float, game_min_delta: float) -> void:
 	if _nyash_progress_min >= 10.0 and not _weakened:
 		_weakened = true
 		if GameState.player != null and GameState.player.has_method("set_weakened"):
-			GameState.player.set_weakened(true)
+			GameState.player.call("set_weakened", true)
 		toast.emit("Юмик истощается от эйфории… движения ослабевают")
 	if _nyash_progress_min >= 20.0:
 		_start_sleep()
@@ -1036,7 +1035,7 @@ func _start_sleep() -> void:
 	GameState.sleep_skip_requested = false
 	set_emotion("eye_closed", "mouth_cat", 99999.0)
 	if GameState.player != null and GameState.player.has_method("enter_sleep_cutscene"):
-		GameState.player.enter_sleep_cutscene(self)
+		GameState.player.call("enter_sleep_cutscene", self)
 	sleep_started.emit()
 	toast.emit("Юмик заснул от эйфории… (8 игровых часов сна)")
 
@@ -1057,7 +1056,7 @@ func _finish_sleep() -> void:
 	GameState.sleeping = false
 	_weakened = false
 	if GameState.player != null and GameState.player.has_method("set_weakened"):
-		GameState.player.set_weakened(false)
+		GameState.player.call("set_weakened", false)
 	_end_nyashing(false)
 	set_emotion("eye_happy", "mouth_smile", 5.0)
 	set_state(CastleState.NORMAL)

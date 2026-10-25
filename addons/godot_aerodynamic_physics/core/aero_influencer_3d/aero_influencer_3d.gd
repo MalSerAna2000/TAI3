@@ -31,58 +31,42 @@ const AeroNodeUtils = preload("../../utils/node_utils.gd")
 ## nodes like AeroMovers or Propellers. Sleep is only interrupted if the AeroInfluencer sub-class triggers it.
 @export var can_override_body_sleep : bool = true
 
+@export var mirror_only_position : bool = false
 @export_enum("None", "X", "Y", "Z") var mirror_axis : int = 0:
 	set(x):
 		mirror_axis = x
-
-func generate_mirror():
-	if mirror_axis == 0 or is_duplicate:
-		return # no duplication
-	
-	if mirror_duplicate: 
-		mirror_duplicate.queue_free()
-	
-	
-	var x = mirror_axis
-	mirror_axis = 0
-	mirror_duplicate = duplicate()
-	mirror_duplicate.is_duplicate = true
-	mirror_duplicate.mirror_duplicate = null
-	mirror_duplicate.name = name + "Mirror"
-	mirror_axis = x
-	mirror_duplicate.mirror_axis = x
-	
-	
-	var flip := Vector3.ONE
-	flip[mirror_axis - 1] = -1.0
-	mirror_duplicate.position *= flip
-	mirror_duplicate.basis = Basis.from_scale(flip) * mirror_duplicate.basis
-	
-	mirror_duplicate.default_transform = mirror_duplicate.transform
-	
-	get_parent().add_child(mirror_duplicate)
-
-## When set, scale will be inverted on the selected axis.
-## This is useful to counteract the inverted scale caused by mirroring.
-## Useful for propellers and other chirality-dependent nodes.
-@export_enum("None", "X", "Y", "Z") var mirror_scaling_fix_axis : int = 0:
-	set(x):
-		mirror_scaling_fix_axis = x
-		if is_inside_tree():
-			_mirror_scaling_fix_axis = mirror_scaling_fix_axis
-var _mirror_scaling_fix_axis : int = 0:
-	set(x):
-		#undo previous mirroring
-		if is_duplicate and _mirror_scaling_fix_axis != 0:
-			basis[_mirror_scaling_fix_axis - 1] *= -1.0
 		
-		_mirror_scaling_fix_axis = x
+		if mirror_duplicate: 
+			mirror_duplicate.queue_free()
 		
-		#do new mirroring
-		if is_duplicate and _mirror_scaling_fix_axis != 0:
-			basis[_mirror_scaling_fix_axis - 1] *= -1.0
-			default_transform = basis
-
+		if mirror_axis == 0 or is_duplicate or not is_inside_tree():
+			return # no duplication
+		
+		mirror_axis = 0
+		mirror_duplicate = duplicate()
+		mirror_duplicate.is_duplicate = true
+		mirror_duplicate.name = name + "Mirror"
+		mirror_axis = x
+		mirror_duplicate.mirror_axis = x
+		
+		
+		match mirror_axis:
+			#an adjustment can be made to this basis calculation to avoid having a negative scale
+			#could also be adjusted to allow arbitrary mirror axis??
+			1: #X
+				mirror_duplicate.position *= Vector3(-1, 1, 1)
+				if not mirror_only_position:
+					mirror_duplicate.basis = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1)) * mirror_duplicate.basis
+			2: #Y
+				mirror_duplicate.position *= Vector3(1, -1, 1)
+				if not mirror_only_position:
+					mirror_duplicate.basis = Basis(Vector3(1, 0, 0), Vector3(0, -1, 0), Vector3(0, 0, 1)) * mirror_duplicate.basis
+			3: #Z
+				mirror_duplicate.position *= Vector3(1, 1, -1)
+				if not mirror_only_position:
+					mirror_duplicate.basis = Basis(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1)) * mirror_duplicate.basis
+		
+		get_parent().add_child(mirror_duplicate)
 var is_duplicate : bool = false
 var mirror_duplicate : AeroInfluencer3D = null
 
@@ -169,8 +153,7 @@ func _init():
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_TRANSFORM_CHANGED:
-			if is_inside_tree():
-				generate_mirror()
+			mirror_axis = mirror_axis
 
 func _ready() -> void:
 	if not Engine.is_editor_hint():
@@ -182,31 +165,26 @@ func _ready() -> void:
 	add_child(lift_debug_vector, INTERNAL_MODE_FRONT)
 	add_child(drag_debug_vector, INTERNAL_MODE_FRONT)
 	add_child(thrust_debug_vector, INTERNAL_MODE_FRONT)
-	
-	for influencer : AeroInfluencer3D in aero_influencers:
-		influencer.generate_mirror()
 
 func _enter_tree() -> void:
-	var parent := get_parent()
-	if get_parent() is AeroBody3D:
-		aero_body = parent
-	elif parent is AeroInfluencer3D:
-		aero_body = parent.aero_body
-		if parent.is_duplicate:
-			is_duplicate = true
+	AeroNodeUtils.connect_signal_safe(self, "child_entered_tree", on_child_enter_tree, 0, true)
+	AeroNodeUtils.connect_signal_safe(self, "child_exiting_tree", on_child_exit_tree, 0, true)
 	
-	if get_parent() is AeroBody3D or parent is AeroInfluencer3D:
-		parent.aero_influencers.append(self)
-	
-	if mirror_scaling_fix_axis != 0:
-		mirror_scaling_fix_axis = mirror_scaling_fix_axis
+	set_deferred("mirror_axis", mirror_axis) #ensures that mirrored version is reliably created when nodes are changed
 
 func _exit_tree() -> void:
-	var parent := get_parent()
-	if parent is AeroInfluencer3D or parent is AeroBody3D:
-		parent.aero_influencers.erase(self)
-	
-	aero_body = null
+	if mirror_duplicate: 
+		mirror_duplicate.queue_free()
+
+func on_child_enter_tree(node : Node) -> void:
+	if node is AeroInfluencer3D:
+		aero_influencers.append(node)
+		node.aero_body = aero_body
+
+func on_child_exit_tree(node : Node) -> void:
+	if node is AeroInfluencer3D and aero_influencers.has(node):
+		aero_influencers.erase(node)
+		node.aero_body = null
 
 func _physics_process(delta : float) -> void:
 	if Engine.is_editor_hint():

@@ -1,5 +1,4 @@
 # Godot Aerodynamic Physics
-### Aerodynamic physics plugin for Godot Engine with deep customizability and high performance.
 <img src="icon.png" alt="drawing" height="256"/>
 
 ## Installation

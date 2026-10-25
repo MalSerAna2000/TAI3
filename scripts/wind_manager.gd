@@ -22,7 +22,7 @@ var current_kmh: float = 1.0
 var direction: Vector3 = Vector3.RIGHT # куда дует ветер (горизонтально)
 var remaining: float = 0.0
 
-var atmosphere: AeroAtmosphere3D = null # регистрируется из Main
+var atmosphere = null # AeroAtmosphere3D, регистрируется из Main (тип не жёсткий: автозагрузка не должна зависеть от классов аддона при компиляции)
 
 var _t: float = 0.0
 # Тела, на которые ветер давит напрямую (ragdoll Юмика, подол платья и т.п.):

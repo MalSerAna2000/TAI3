@@ -1,11 +1,10 @@
 extends CanvasLayer
-class_name GameHUD
 ## HUD: сенсорное управление (TouchControls), кнопки действий справа,
 ## «Не отпускай меня» и «Меню отладки» слева сверху, часы/состояние/ветер,
 ## полоса эйфории няшинга, оверлеи сна и гибели, тосты.
 
-var _player: YumikPlayer = null
-var _castle: CastleNZTB = null
+var _player = null
+var _castle = null
 
 var _btn_jump: Button
 var _btn_lie: Button
@@ -261,7 +260,7 @@ func _teleport_to_castle() -> void:
 	var out_dir: Vector3 = (_castle as Node3D).global_transform.basis * Vector3(0, 0, 1)
 	var target: Vector3 = gate + out_dir * 9.0
 	if GameState.world != null:
-		target.y = maxf(target.y, GameState.world.get_height_at(target.x, target.z) + 1.0)
+		target.y = maxf(target.y, float(GameState.world.call("get_height_at", target.x, target.z)) + 1.0)
 	_player.teleport_to(target)
 	show_toast("Телепортация к НЗТБНЗ")
 

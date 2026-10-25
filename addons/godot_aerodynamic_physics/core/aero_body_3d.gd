@@ -131,18 +131,22 @@ const AeroNodeUtils = preload("../utils/node_utils.gd")
 ## For example, when SUBSTEPS is set to 4, the physics update is broken down into 4 sub-iterations. [br]
 ## The initial physics update does NOT count as an extra substep. [br]
 var SUBSTEPS : int = ProjectSettings.get_setting("physics/aerodynamics/substeps", 1):
+	set(x):
+		SUBSTEPS = x
+		PREDICTION_TIMESTEP_FRACTION = 1.0 / float(SUBSTEPS)
 	get:
 		if substeps_override > -1:
 			return substeps_override
 		return ProjectSettings.get_setting("physics/aerodynamics/substeps", 1)
 ## Used to calculate [code]substep_delta[/code].
 var PREDICTION_TIMESTEP_FRACTION : float:
+	set(x):
+		PREDICTION_TIMESTEP_FRACTION = x
+		substep_delta = get_physics_process_delta_time() * PREDICTION_TIMESTEP_FRACTION
 	get:
 		return 1.0 / float(SUBSTEPS)
 
-var substep_delta : float:
-	get:
-		return get_physics_process_delta_time() * PREDICTION_TIMESTEP_FRACTION
+var substep_delta : float = get_physics_process_delta_time() * PREDICTION_TIMESTEP_FRACTION
 var current_substep : float = 0
 
 ## List of [AeroInfluencer3D] nodes that affect this [AeroBody3D]
@@ -294,10 +298,23 @@ func _init():
 func _enter_tree() -> void:
 	test_enter_tree_override = true
 	
+	AeroNodeUtils.connect_signal_safe(self, "child_entered_tree", on_child_enter_tree, 0, true)
+	AeroNodeUtils.connect_signal_safe(self, "child_exiting_tree", on_child_exit_tree, 0, true)
+	
 	set_collision_layer_value(ProjectSettings.get_setting("physics/aerodynamics/atmosphere_area_collision_layer", 15), true) 
 	
 	if Engine.is_editor_hint():
 		update_configuration_warnings()
+
+func on_child_enter_tree(node : Node) -> void:
+	if node is AeroInfluencer3D:
+		aero_influencers.append(node)
+		node.aero_body = self
+
+func on_child_exit_tree(node : Node) -> void:
+	if node is AeroInfluencer3D and aero_influencers.has(node):
+		aero_influencers.erase(node)
+		node.aero_body = null
 
 func _ready() -> void:
 	test_ready_override = true
@@ -312,9 +329,6 @@ func _ready() -> void:
 	mass_debug_point.add_child(torque_debug_vector, INTERNAL_MODE_FRONT)
 	mass_debug_point.add_child(linear_velocity_vector, INTERNAL_MODE_FRONT)
 	mass_debug_point.add_child(angular_velocity_vector, INTERNAL_MODE_FRONT)
-	
-	for influencer : AeroInfluencer3D in aero_influencers:
-		influencer.generate_mirror()
 	
 	_update_debug_visibility()
 	
@@ -416,6 +430,7 @@ func calculate_forces(delta : float) -> PackedVector3Array:
 	var last_force_and_torque := PackedVector3Array([Vector3.ZERO, Vector3.ZERO])
 	var total_force_and_torque := PackedVector3Array([Vector3.ZERO, Vector3.ZERO])
 	
+	substep_delta = delta * PREDICTION_TIMESTEP_FRACTION
 	for substep : int in range(SUBSTEPS):
 		current_substep = substep
 		
@@ -445,11 +460,9 @@ func calculate_forces(delta : float) -> PackedVector3Array:
 		
 		last_force_and_torque[0] = substep_force_and_torque_sum[0]
 		last_force_and_torque[1] = substep_force_and_torque_sum[1]
-		
+
 		linear_velocity_substep = calculate_linear_velocity_substep(last_force_and_torque[0]) + current_gravity * substep_delta
 		angular_velocity_substep = calculate_angular_velocity_substep(last_force_and_torque[1])
-		
-		if Engine.is_editor_hint(): break #only simulate 1 substep: see https://github.com/addmix/godot_aerodynamic_physics/issues/35
 	
 	total_force_and_torque[0] = total_force_and_torque[0] / SUBSTEPS
 	total_force_and_torque[1] = total_force_and_torque[1] / SUBSTEPS
@@ -597,6 +610,7 @@ func _update_debug() -> void:
 		var original_angular_velocity := angular_velocity
 		linear_velocity = debug_linear_velocity
 		angular_velocity = debug_angular_velocity
+		substep_delta = 1.0 / float(ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60.0)) / SUBSTEPS
 		var last_force_and_torque := calculate_forces(substep_delta)
 		
 		linear_velocity = original_linear_velocity

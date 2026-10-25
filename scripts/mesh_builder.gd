@@ -5,6 +5,12 @@ class_name MeshBuilder
 
 static var _cache: Dictionary = {}
 
+## MeshDataTool принимает только ArrayMesh — конвертируем примитивы.
+static func _to_array_mesh(pm: PrimitiveMesh) -> ArrayMesh:
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, pm.get_mesh_arrays())
+	return am
+
 ## Скруглённый бокс: подразделяет BoxMesh и «надувает» вершины к форме
 ## со скруглёнными углами радиуса r. Нормали — аналитические.
 static func rounded_box(size: Vector3, radius: float, subdiv: int = 6) -> ArrayMesh:
@@ -17,7 +23,7 @@ static func rounded_box(size: Vector3, radius: float, subdiv: int = 6) -> ArrayM
 	box.subdivide_height = subdiv
 	box.subdivide_depth = subdiv
 	var mdt := MeshDataTool.new()
-	mdt.create_from_surface(box, 0)
+	mdt.create_from_surface(_to_array_mesh(box), 0)
 	var half: Vector3 = size * 0.5
 	var r: float = clampf(radius, 0.01, minf(half.x, minf(half.y, half.z)) - 0.001)
 	var inner: Vector3 = half - Vector3(r, r, r)
@@ -203,7 +209,7 @@ static func rock_mesh() -> ArrayMesh:
 	s.radial_segments = 9
 	s.rings = 5
 	var mdt := MeshDataTool.new()
-	mdt.create_from_surface(s, 0)
+	mdt.create_from_surface(_to_array_mesh(s), 0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 777
 	for i: int in mdt.get_vertex_count():

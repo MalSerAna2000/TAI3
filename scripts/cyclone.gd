@@ -153,7 +153,7 @@ func _pick_waypoint() -> void:
 	if GameState.player != null and randf() < 0.35:
 		_waypoint = GameState.player.global_position
 	if GameState.world != null:
-		_waypoint.y = GameState.world.get_height_at(_waypoint.x, _waypoint.z)
+		_waypoint.y = float(GameState.world.call("get_height_at", _waypoint.x, _waypoint.z))
 	_waypoint_timer = randf_range(8.0, 16.0)
 
 ## Поле ветра вихря: касательное + внутрь + вверх у ядра.
@@ -182,7 +182,7 @@ func _physics_process(_delta: float) -> void:
 		if v.length() > 0.1:
 			rb.apply_central_force((v - rb.linear_velocity * 0.6) * rb.mass * 1.4)
 	# Замок тоже шатает и крутит (Богиня Ветра довольна шалостью)
-	var castle: CastleNZTB = GameState.castle
+	var castle = GameState.castle
 	if castle != null:
 		var cb := castle as RigidBody3D
 		var v2: Vector3 = wind_velocity_at(cb.global_position + Vector3.UP * 12.0)
@@ -205,7 +205,7 @@ func _process(delta: float) -> void:
 	if to_wp.length() > 1.0:
 		global_position += to_wp.normalized() * 6.5 * delta
 	if GameState.world != null:
-		global_position.y = GameState.world.get_height_at(global_position.x, global_position.z)
+		global_position.y = float(GameState.world.call("get_height_at", global_position.x, global_position.z))
 	# Богиня кружится и машет крыльями на вершине
 	_goddess.rotation.y += delta * 1.6
 	_goddess.position.y = 150.0 + sin(_life * 1.3) * 9.0

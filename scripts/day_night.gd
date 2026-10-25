@@ -45,7 +45,7 @@ func _ready() -> void:
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
 	environment.fog_enabled = true
-	environment.fog_mode = Environment.FOG_EXPONENTIAL
+	environment.fog_mode = Environment.FOG_MODE_EXPONENTIAL
 	environment.fog_density = 0.0012
 	environment.fog_sky_affect = 0.35
 	environment.glow_enabled = true

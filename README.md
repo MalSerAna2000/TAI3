@@ -83,8 +83,8 @@ G — одежда у шкафа, Tab — меню отладки, 1–5 — в�
 ## Физика и плагины
 
 - **Jolt Physics** (`physics/3d/physics_engine="Jolt Physics"`).
-- **Godot Aerodynamic Physics** (Addmix, MIT) в `res://addons/godot_aerodynamic_physics`
-  (демо-сцены плагина удалены, чтобы не раздувать проект): замок — `AeroBody3D`,
+- **Godot Aerodynamic Physics v0.9.1** (Addmix, MIT) в `res://addons/godot_aerodynamic_physics`
+  (релизный тег; демо-сцены удалены, чтобы не раздувать проект): замок — `AeroBody3D`,
   крылья/стены/крылья Бога — `AeroSurface3D` (наследник `AeroInfluencer3D`),
   глобальный ветер — `AeroAtmosphere3D`, которым управляет `WindManager`;
   ветер также давит парусными силами на ragdoll и задраный подол платья.
@@ -128,6 +128,17 @@ assets/textures, assets/audio   сгенерированные ассеты
 addons/godot_aerodynamic_physics/   плагин аэродинамики (MIT)
 tools/gen_assets.py      генератор ассетов (numpy, pillow, soundfile, imageio-ffmpeg)
 ```
+
+## Примечание о совместимости с Godot 4.7.2
+
+В Godot 4.7 часть API переименована, проект приведён к ней точечно:
+`Environment.FOG_MODE_EXPONENTIAL` (не `FOG_EXPONENTIAL`),
+`RigidBody3D.continuous_cd` — теперь `bool` (enum `CCD_MODE_*` удалён),
+а в гизмо аддона (`core/gizmos/aero_surface_gizmo.gd`) заменены удалённые
+свойства материала `flags_unshaded / flags_transparent / flags_no_depth_test`
+на `shading_mode / transparency / no_depth_test` — без этого редактор
+отключал плагин из-за ошибки компиляции гизмо. Если будете обновлять аддон
+поверх, проверьте эти три строки.
 
 ## Известные упрощения
 
