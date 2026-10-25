@@ -1,0 +1,89 @@
+; Engine configuration file.
+; «Темный Бог Надувных Замков» — Godot Engine 4.7.2, Jolt Physics, Mobile renderer.
+; It's best edited using the editor UI and not directly.
+
+config_version=5
+
+[application]
+
+config/name="Темный Бог Надувных Замков"
+config/description="3D-хоррор / физическая песочница в открытом процедурном мире. Юмик и Надувной Замок Темного Бога Надувных Замков."
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+config/icon="res://icon.png"
+boot_splash/bg_color=Color(0.02, 0, 0.03, 1)
+
+[autoload]
+
+AeroUnits="*res://addons/godot_aerodynamic_physics/core/singletons/aero_units.gd"
+GameState="*res://scripts/game_state.gd"
+WindManager="*res://scripts/wind_manager.gd"
+AudioManager="*res://scripts/audio_manager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/resizable=true
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+window/energy_saving/keep_screen_on=true
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_aerodynamic_physics/plugin.cfg")
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+pointing/emulate_mouse_from_touch=false
+
+[layer_names]
+
+3d_physics/layer_1="World (terrain)"
+3d_physics/layer_2="Player"
+3d_physics/layer_3="Castle (NZTB NZ)"
+3d_physics/layer_4="Bouncy props"
+3d_physics/layer_5="Ropes"
+3d_physics/layer_6="Ragdoll"
+3d_physics/layer_7="Cyclone FX"
+3d_physics/layer_8="Water trigger"
+3d_physics/layer_15="Atmosphere Areas"
+
+[physics]
+
+; Встроенный Jolt Physics (Project Settings > Physics > 3D > Physics Engine)
+3d/physics_engine="Jolt Physics"
+3d/default_gravity=9.8
+3d/default_linear_damp=0.05
+3d/default_angular_damp=0.1
+common/physics_ticks_per_second=60
+3d/run_on_separate_thread=false
+common/enable_object_picking=false
+; Настройки плагина Godot Aerodynamic Physics
+aerodynamics/substeps=2
+aerodynamics/atmosphere_area_collision_layer=15
+
+[rendering]
+
+; Mobile renderer — совместимость и производительность на Android
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+; Сжатие текстур ETC2/ASTC для Android при импорте
+textures/vram_compression/import_etc2_astc=true
+textures/decals/filter=3
+environment/defaults/default_clear_color=Color(0.01, 0.01, 0.04, 1)
+anti_aliasing/quality/msaa_3d=2
+scaling_3d/mode=0
+mesh_lod/lod_terrain=false
+limits/spatial_indexer/max_children_per_branch=512
+
+[audio]
+
+; Шины Music/SFX/Ambient создаются в AudioManager при старте (AudioServer.add_bus)
+driver/enable_input=false
+
+[gui]
+
+theme/default_font_multichannel_signed_distance_field=true
